@@ -2,7 +2,7 @@
 import { KokoroTTS } from 'https://cdn.jsdelivr.net/npm/kokoro-js@latest/dist/kokoro.min.js';
 
 (async () => {
-  // 1. モデルのロード
+  // 1. モデルのロード (量子化q8, WebGPU)
   const tts = await KokoroTTS.from_pretrained(
     'onnx-community/Kokoro-82M-v1.0-ONNX',
     { dtype: 'q8', device: 'webgpu' }
@@ -34,6 +34,7 @@ import { KokoroTTS } from 'https://cdn.jsdelivr.net/npm/kokoro-js@latest/dist/ko
     speakBtn.disabled = true;
     stopBtn.disabled  = false;
 
+    // 5. 音声生成 & 再生
     const wavBuffer = await tts.generate(text, { voice: voiceSelect.value });
     const blob      = new Blob([wavBuffer], { type: 'audio/wav' });
     const url       = URL.createObjectURL(blob);
@@ -47,7 +48,7 @@ import { KokoroTTS } from 'https://cdn.jsdelivr.net/npm/kokoro-js@latest/dist/ko
     };
   }
 
-  // 5. 再生停止
+  // 6. 再生停止
   function stop() {
     if (audioInstance) {
       audioInstance.pause();
@@ -57,7 +58,7 @@ import { KokoroTTS } from 'https://cdn.jsdelivr.net/npm/kokoro-js@latest/dist/ko
     stopBtn.disabled  = true;
   }
 
-  // 6. イベント登録
+  // 7. イベント登録
   speakBtn.addEventListener('click', speak);
   stopBtn.addEventListener('click', stop);
 })();
