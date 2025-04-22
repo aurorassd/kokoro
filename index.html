@@ -1,0 +1,23 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>可愛い声ブラウザTTS (Kokoro)</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>可愛い声ブラウザTTS (Kokoro)</h1>
+    <textarea id="textInput" rows="5" placeholder="テキストを入力"></textarea>
+    <label for="voiceSelect">声を選択</label>
+    <select id="voiceSelect"></select>
+    <div class="button-group">
+      <button id="speakBtn">再生</button>
+      <button id="stopBtn" disabled>停止</button>
+    </div>
+  </div>
+  <script type="module" src="script.js"></script>
+</body>
+</html>
