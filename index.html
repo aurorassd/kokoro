@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Prompt Builder (Final v2.1)</title>
+    <title>AI Prompt Builder (Final v2.3)</title>
     <!-- Tailwind CSSを読み込み -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- ★変更点: 外部のボタン定義ファイルを読み込み -->
+    <!-- 外部のボタン定義ファイルを読み込み -->
     <script src="templates.js" defer></script>
     <style>
         body {
@@ -14,10 +14,7 @@
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }
-        .tooltip {
-            position: relative;
-            display: inline-block;
-        }
+        .tooltip { position: relative; display: inline-block; }
         .tooltip .tooltip-text {
             visibility: hidden; width: 140px; background-color: #22c55e; color: #fff; text-align: center;
             border-radius: 6px; padding: 5px 0; position: absolute; z-index: 50; bottom: 125%; left: 50%;
@@ -29,43 +26,56 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         .character-name-span {
-            font-weight: 600;
-            color: #1d4ed8; /* blue-700 */
-            cursor: pointer;
-            padding: 2px 4px;
-            border-radius: 4px;
-            transition: background-color 0.2s;
+            font-weight: 600; color: #1d4ed8; cursor: pointer; padding: 2px 4px;
+            border-radius: 4px; transition: background-color 0.2s;
         }
-        .character-name-span:hover {
-            background-color: #dbeafe; /* blue-100 */
-        }
-        /* モーダル用のスタイル */
-        .modal-overlay {
-            transition: opacity 0.3s ease;
-        }
-        /* detailsタグのデフォルトのマーカーを非表示にする */
-        summary::-webkit-details-marker {
-            display: none;
-        }
+        .character-name-span:hover { background-color: #dbeafe; }
+        .modal-overlay { transition: opacity 0.3s ease; }
+        summary::-webkit-details-marker { display: none; }
+        
+        /* ★変更点: 文字サイズ変更用のCSSクラスを追加 */
+        .text-size-1 { font-size: 0.7rem; }
+        .text-size-2 { font-size: 0.75rem; }
+        .text-size-3 { font-size: 0.8rem; }
+        .text-size-4 { font-size: 0.9rem; }
+        .text-size-5 { font-size: 1.0rem; } /* 標準 */
+        .text-size-6 { font-size: 1.1rem; }
+        .text-size-7 { font-size: 1.25rem; }
+        .text-size-8 { font-size: 1.4rem; }
+        .text-size-9 { font-size: 1.6rem; }
+        .text-size-10 { font-size: 1.8rem; }
     </style>
 </head>
 <body class="bg-slate-200 text-slate-800 h-screen overflow-hidden">
 
     <div class="flex h-full">
         <!-- 左カラム: プロンプト組み立てエリア -->
-        <main class="flex-grow flex flex-col p-3 h-full">
+        <main id="main-panel" class="flex-grow flex flex-col p-3 h-full">
             <div class="flex justify-between items-center mb-3">
                 <h2 class="text-xl font-bold text-slate-700">プロンプト</h2>
                 <div id="menu-container" class="relative">
                     <button id="menu-button" class="bg-white hover:bg-slate-100 text-slate-600 font-semibold py-2 px-4 rounded-md shadow-sm border border-slate-300">メニュー</button>
-                    <div id="menu-dropdown" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-xl z-20 hidden">
+                    <!-- ★変更点: メニュー項目を更新 -->
+                    <div id="menu-dropdown" class="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-xl z-20 hidden">
                         <div class="py-1">
                             <div class="tooltip w-full">
-                                <span id="copy-tooltip" class="tooltip-text">コピーしました！</span>
+                                <span id="menu-tooltip" class="tooltip-text"></span>
                                 <a href="#" id="copy-button" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">クリップボードにコピー</a>
                             </div>
                             <a href="#" id="export-button" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">テキストファイルで出力</a>
-                             <div class="border-t border-slate-200 my-1"></div>
+                            <div class="border-t border-slate-200 my-1"></div>
+                            <a href="#" id="save-load-button" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">保存 / 読み込み</a>
+                            <div class="border-t border-slate-200 my-1"></div>
+                            <!-- 文字サイズ変更機能 -->
+                            <div class="px-4 py-2 text-sm text-slate-700 flex items-center justify-between">
+                                <span>文字サイズ</span>
+                                <div class="flex items-center gap-2">
+                                    <button id="font-size-decrease" class="w-6 h-6 rounded-full bg-slate-200 hover:bg-slate-300">-</button>
+                                    <span id="font-size-display" class="w-4 text-center">5</span>
+                                    <button id="font-size-increase" class="w-6 h-6 rounded-full bg-slate-200 hover:bg-slate-300">+</button>
+                                </div>
+                            </div>
+                            <div class="border-t border-slate-200 my-1"></div>
                             <a href="#" id="edit-history-button" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">履歴を編集</a>
                         </div>
                     </div>
@@ -75,13 +85,22 @@
         </main>
 
         <!-- 右カラム: 操作パネル -->
-        <aside class="w-64 bg-slate-100 p-3 flex flex-col gap-4 border-l border-slate-300 h-full">
+        <aside id="control-panel" class="w-64 bg-slate-100 p-3 flex flex-col gap-4 border-l border-slate-300 h-full transition-all duration-300 ease-in-out">
             <div id="character-input-container" class="relative">
                 <label for="placeholder-input" class="block text-sm font-medium text-slate-600 mb-1">登場人物</label>
                 <input type="text" id="placeholder-input" class="w-full p-2 border border-slate-300 rounded-md text-sm" placeholder="名前を入力" autocomplete="off">
                 <div id="history-dropdown" class="absolute left-0 right-0 mt-1 bg-white border border-slate-300 rounded-md shadow-lg z-30 hidden max-h-48 overflow-y-auto custom-scrollbar"></div>
             </div>
-            <!-- ★変更点: ボタンコンテナの構造を変更。カテゴリ分けに対応し、縦スクロール可能にする -->
+            
+            <!-- ★変更点: 自由定型文入力欄を追加 -->
+            <div>
+                <label for="custom-text-input" class="block text-sm font-medium text-slate-600 mb-1">自由入力</label>
+                <textarea id="custom-text-input" rows="3" class="w-full p-2 border border-slate-300 rounded-md text-sm" placeholder="自由な文章を入力"></textarea>
+                <button id="add-custom-text-button" class="mt-2 w-full bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-2 rounded-md transition text-sm">バルーンを追加</button>
+            </div>
+
+            <div class="border-t border-slate-300"></div>
+
             <div id="template-buttons" class="flex flex-col gap-3 overflow-y-auto custom-scrollbar flex-grow"></div>
         </aside>
     </div>
@@ -89,15 +108,34 @@
     <!-- 履歴編集モーダル -->
     <div id="history-modal" class="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4 hidden modal-overlay opacity-0">
         <div class="bg-white rounded-lg shadow-2xl w-full max-w-sm max-h-[80vh] flex flex-col">
-            <div class="p-4 border-b">
-                <h3 class="text-lg font-bold">登場人物の履歴を編集</h3>
-            </div>
-            <div id="history-modal-list" class="p-4 flex-grow overflow-y-auto custom-scrollbar">
-                <!-- 履歴がここに表示されます -->
-            </div>
+            <div class="p-4 border-b"><h3 class="text-lg font-bold">登場人物の履歴を編集</h3></div>
+            <div id="history-modal-list" class="p-4 flex-grow overflow-y-auto custom-scrollbar"></div>
             <div class="p-4 bg-slate-50 border-t flex justify-between items-center">
                 <button id="delete-all-history-button" class="text-sm text-red-600 hover:text-red-800">すべての履歴を削除</button>
                 <button id="close-history-modal-button" class="bg-slate-600 hover:bg-slate-700 text-white font-semibold py-2 px-4 rounded-md">閉じる</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ★変更点: 保存/読み込みモーダルを追加 -->
+    <div id="save-load-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 hidden modal-overlay opacity-0">
+        <div class="bg-white rounded-lg shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col">
+            <div class="p-4 border-b">
+                <h3 class="text-lg font-bold">保存 / 読み込み</h3>
+            </div>
+            <div class="p-4 flex flex-col gap-4">
+                <div class="flex items-center gap-2">
+                    <label for="slot-input" class="text-sm font-medium">スロット (1-999):</label>
+                    <input type="number" id="slot-input" min="1" max="999" class="w-24 p-2 border border-slate-300 rounded-md text-sm">
+                    <button id="save-to-slot-button" class="flex-grow bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md text-sm">このスロットに保存</button>
+                </div>
+            </div>
+            <div class="px-4 pb-2 text-sm font-medium text-slate-600">保存済みデータ</div>
+            <div id="saved-slots-list" class="px-4 flex-grow overflow-y-auto custom-scrollbar border-t pt-2">
+                <!-- 保存済みスロットがここに表示されます -->
+            </div>
+            <div class="p-4 bg-slate-50 border-t flex justify-end">
+                <button id="close-save-load-modal-button" class="bg-slate-600 hover:bg-slate-700 text-white font-semibold py-2 px-4 rounded-md">閉じる</button>
             </div>
         </div>
     </div>
@@ -106,39 +144,55 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // ========== ★変更点: 定型文データは外部ファイル(templates.js)から読み込むため、ここの定義は削除 ==========
-        // const templates = [ ... ]; // ← この部分を削除しました
-        // ==============================================================================================
-
-        // 要素の取得
+        // --- 要素の取得 ---
         const getEl = (id) => document.getElementById(id);
+        const mainPanel = getEl('main-panel');
+        const controlPanel = getEl('control-panel');
         const placeholderInput = getEl('placeholder-input');
         const historyDropdown = getEl('history-dropdown');
-        const characterInputContainer = getEl('character-input-container');
         const templateButtonsContainer = getEl('template-buttons');
         const promptContainer = getEl('prompt-container');
         const clipboardHelper = getEl('clipboard-helper');
+        // メニュー関連
         const menuContainer = getEl('menu-container');
         const menuButton = getEl('menu-button');
         const menuDropdown = getEl('menu-dropdown');
+        const menuTooltip = getEl('menu-tooltip');
         const copyButton = getEl('copy-button');
         const exportButton = getEl('export-button');
-        const copyTooltip = getEl('copy-tooltip');
-        
+        // ★変更点: 新機能の要素を取得
+        const customTextInput = getEl('custom-text-input');
+        const addCustomTextButton = getEl('add-custom-text-button');
+        const saveLoadButton = getEl('save-load-button');
+        const fontSizeDecrease = getEl('font-size-decrease');
+        const fontSizeIncrease = getEl('font-size-increase');
+        const fontSizeDisplay = getEl('font-size-display');
+        // 履歴モーダル
         const editHistoryButton = getEl('edit-history-button');
         const historyModal = getEl('history-modal');
         const historyModalList = getEl('history-modal-list');
         const deleteAllHistoryButton = getEl('delete-all-history-button');
         const closeHistoryModalButton = getEl('close-history-modal-button');
+        // ★変更点: 保存/読み込みモーダル
+        const saveLoadModal = getEl('save-load-modal');
+        const slotInput = getEl('slot-input');
+        const saveToSlotButton = getEl('save-to-slot-button');
+        const savedSlotsList = getEl('saved-slots-list');
+        const closeSaveLoadModalButton = getEl('close-save-load-modal-button');
 
+        // --- 状態変数 ---
         let historySet = new Set();
+        let fontSizeLevel = 5;
 
+        // --- 初期化 ---
         const initializeApp = () => {
             loadHistory();
-            createTemplateButtons(); // この関数の中身を大幅に変更
+            loadFontSize(); // ★追加
+            createTemplateButtons();
             setupEventListeners();
         };
         
+        // --- イベントリスナー設定 ---
         const setupEventListeners = () => {
             copyButton.addEventListener('click', handleCopy);
             exportButton.addEventListener('click', handleExport);
@@ -152,23 +206,62 @@
                 if (historySet.size > 0) historyDropdown.classList.remove('hidden');
             });
             
+            // ★変更点: 新機能のイベントリスナー
+            addCustomTextButton.addEventListener('click', handleAddCustomText);
+            fontSizeIncrease.addEventListener('click', () => changeFontSize(1));
+            fontSizeDecrease.addEventListener('click', () => changeFontSize(-1));
+            saveLoadButton.addEventListener('click', openSaveLoadModal);
+            
+            // 履歴モーダル
             editHistoryButton.addEventListener('click', openHistoryModal);
             closeHistoryModalButton.addEventListener('click', closeHistoryModal);
-            historyModal.addEventListener('click', (e) => {
-                if(e.target === historyModal) closeHistoryModal();
-            });
+            historyModal.addEventListener('click', (e) => { if(e.target === historyModal) closeHistoryModal(); });
             deleteAllHistoryButton.addEventListener('click', handleDeleteAllHistory);
+            
+            // 保存/読み込みモーダル
+            closeSaveLoadModalButton.addEventListener('click', closeSaveLoadModal);
+            saveLoadModal.addEventListener('click', (e) => { if(e.target === saveLoadModal) closeSaveLoadModal(); });
+            saveToSlotButton.addEventListener('click', handleSaveToSlot);
+
+            // UI動的リサイズ
+            controlPanel.addEventListener('mouseenter', () => controlPanel.classList.replace('w-64', 'w-80'));
+            mainPanel.addEventListener('mouseenter', () => controlPanel.classList.replace('w-80', 'w-64'));
         };
         
-        const updateHistoryStorage = () => {
-             localStorage.setItem('promptBuilderHistory', JSON.stringify(Array.from(historySet)));
+        // --- ツールチップ ---
+        const showTooltip = (message) => {
+            menuTooltip.textContent = message;
+            menuTooltip.classList.add('visible');
+            setTimeout(() => menuTooltip.classList.remove('visible'), 2000);
         };
-        
+
+        // --- ★新規: 文字サイズ変更機能 ---
+        const loadFontSize = () => {
+            const savedLevel = localStorage.getItem('promptBuilderFontSizeLevel');
+            fontSizeLevel = savedLevel ? parseInt(savedLevel, 10) : 5;
+            updateFontSizeDisplay();
+        };
+        const changeFontSize = (delta) => {
+            const newLevel = fontSizeLevel + delta;
+            if (newLevel >= 1 && newLevel <= 10) {
+                fontSizeLevel = newLevel;
+                updateFontSizeDisplay();
+            }
+        };
+        const updateFontSizeDisplay = () => {
+            const classPrefix = 'text-size-';
+            promptContainer.classList.forEach(c => c.startsWith(classPrefix) && promptContainer.classList.remove(c));
+            promptContainer.classList.add(`${classPrefix}${fontSizeLevel}`);
+            fontSizeDisplay.textContent = fontSizeLevel;
+            localStorage.setItem('promptBuilderFontSizeLevel', fontSizeLevel);
+        };
+
+        // --- 履歴管理 (変更なし) ---
+        const updateHistoryStorage = () => localStorage.setItem('promptBuilderHistory', JSON.stringify(Array.from(historySet)));
         const loadHistory = () => {
             const saved = localStorage.getItem('promptBuilderHistory');
             if (saved) historySet = new Set(JSON.parse(saved));
         };
-
         const addToHistory = (name) => {
             const trimmedName = name.trim();
             if (trimmedName && !historySet.has(trimmedName)) {
@@ -176,14 +269,12 @@
                 updateHistoryStorage();
             }
         };
-
         const renderHistoryDropdown = () => {
             historyDropdown.innerHTML = ''; 
             if (historySet.size === 0) {
                 historyDropdown.classList.add('hidden');
                 return;
             }
-            
             Array.from(historySet).sort().forEach(name => {
                 const item = document.createElement('div');
                 item.textContent = name;
@@ -196,54 +287,51 @@
             });
         };
 
-        // --- ★変更点: UI生成ロジックを全面的に刷新 ---
+        // --- UI生成 (変更なし) ---
         const createTemplateButtons = () => {
-            templateButtonsContainer.innerHTML = ''; // コンテナをクリア
-            // 外部ファイルで定義されたTEMPLATE_DATAを使用
+            templateButtonsContainer.innerHTML = '';
             TEMPLATE_DATA.forEach(categoryData => {
-                // カテゴリごとの折りたたみコンテナ(<details>)を作成
                 const details = document.createElement('details');
                 details.className = 'group';
-                details.open = false; // デフォルトで開いておく
-
-                // カテゴリ名を表示するヘッダー(<summary>)
                 const summary = document.createElement('summary');
                 summary.className = 'text-sm font-semibold text-slate-500 cursor-pointer list-none flex items-center justify-between p-2 rounded-md hover:bg-slate-200';
-                summary.innerHTML = `
-                    <span>${categoryData.category}</span>
-                    <svg class="w-4 h-4 transition-transform transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                `;
+                summary.innerHTML = `<span>${categoryData.category}</span><svg class="w-4 h-4 transition-transform transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>`;
                 details.appendChild(summary);
-
-                // カテゴリに属するボタンを格納するコンテナ
                 const buttonGroup = document.createElement('div');
                 buttonGroup.className = 'mt-2 flex flex-col gap-2 pl-2';
-
                 categoryData.items.forEach(template => {
                     const button = document.createElement('button');
-                    button.textContent = template.label; // ボタンの表示名は label を使用
+                    button.textContent = template.label;
                     button.className = "w-full bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-semibold py-2 px-2 rounded-md transition text-sm text-left";
-                    
-                    // addBalloonにはtemplateオブジェクト({text, label})全体を渡す
                     button.addEventListener('click', () => addBalloon(template));
                     buttonGroup.appendChild(button);
                 });
-
                 details.appendChild(buttonGroup);
                 templateButtonsContainer.appendChild(details);
             });
         };
 
-        // --- ★変更点: バルーン操作関数の引数を変更 ---
-        const addBalloon = (template) => { // 引数が template オブジェクト {text, label} に
-            const name = placeholderInput.value.trim();
+        // --- バルーン操作 ---
+        const handleAddCustomText = () => {
+            const text = customTextInput.value.trim();
+            if (text) {
+                addBalloon({ text: text, label: 'カスタム' });
+                customTextInput.value = '';
+            }
+        };
+        const addBalloon = (template, loadedCharacterName = null) => {
+            const name = loadedCharacterName !== null ? loadedCharacterName : placeholderInput.value.trim();
             const isCharacterTemplate = template.text.includes('{placeholder}');
             if (isCharacterTemplate && name) addToHistory(name);
             
             const balloon = document.createElement('div');
-            // dataset.category には template.label を設定し、連番機能の互換性を維持
             balloon.dataset.category = template.label; 
-            balloon.className = "prompt-balloon bg-blue-50 border-l-4 border-blue-500 text-slate-800 p-2 my-1.5 rounded-r-md shadow-sm flex items-center gap-2 text-sm";
+            balloon.dataset.templateText = template.text;
+            balloon.dataset.templateLabel = template.label;
+            balloon.className = "prompt-balloon bg-blue-50 border-l-4 border-blue-500 text-slate-800 p-2 my-1.5 rounded-r-md shadow-sm flex items-start gap-2";
+            
+            const overallNumberSpan = document.createElement('span');
+            overallNumberSpan.className = 'overall-number-span text-slate-400 font-mono pt-[2px] w-6 text-right pr-1 select-none';
             
             const textContainer = document.createElement('div');
             textContainer.className = "balloon-text-container flex-grow relative";
@@ -267,24 +355,24 @@
             }
 
             const controls = document.createElement('div');
-            controls.className = "flex flex-col gap-0.5";
+            controls.className = "flex flex-col gap-0.5 pt-0.5";
             controls.append( createMoveButton('↑', '上へ移動', () => moveUp(balloon)), createMoveButton('↓', '下へ移動', () => moveDown(balloon)) );
             const deleteButton = document.createElement('button');
             deleteButton.innerHTML = '&times;';
             deleteButton.className = "ml-1 text-red-500 hover:text-red-700 font-bold text-xl leading-none px-1 rounded-full";
             deleteButton.addEventListener('click', () => { balloon.remove(); renumberBalloons(); });
 
-            balloon.append(textContainer, controls, deleteButton);
+            balloon.append(overallNumberSpan, textContainer, controls, deleteButton);
             promptContainer.append(balloon);
             renumberBalloons();
         };
-
-        // --- 以下の関数は変更ありません ---
 
         const renumberBalloons = () => {
             const balloons = Array.from(promptContainer.querySelectorAll('.prompt-balloon'));
             const categoryCounters = {};
             balloons.forEach((balloon, index) => {
+                balloon.querySelector('.overall-number-span').textContent = `${index + 1}.`;
+                
                 const category = balloon.dataset.category;
                 categoryCounters[category] = (categoryCounters[category] || 0) + 1;
                 const count = categoryCounters[category];
@@ -292,10 +380,10 @@
                 let numberSpan = textContainer.querySelector('.number-span');
                 if (!numberSpan) {
                     numberSpan = document.createElement('span');
-                    numberSpan.className = 'number-span text-slate-500 font-mono ml-2'; // 少しマージン追加
+                    numberSpan.className = 'number-span text-slate-500 font-mono ml-2 select-none';
                     textContainer.append(numberSpan);
                 }
-                numberSpan.textContent = `(${count})`; // カッコで囲んで見やすく
+                numberSpan.textContent = `(${count})`;
                 balloon.querySelector('button[title="上へ移動"]').disabled = (index === 0);
                 balloon.querySelector('button[title="下へ移動"]').disabled = (index === balloons.length - 1);
             });
@@ -310,6 +398,7 @@
         };
         const moveUp = (b) => { if(b.previousElementSibling) { promptContainer.insertBefore(b, b.previousElementSibling); renumberBalloons(); } };
         const moveDown = (b) => { if(b.nextElementSibling) { promptContainer.insertBefore(b.nextElementSibling, b); renumberBalloons(); } };
+        
         const toggleCharacterDropdown = (balloon) => {
             closeAllCharacterDropdowns(balloon);
             let dropdown = balloon.querySelector('.character-dropdown');
@@ -336,17 +425,19 @@
             });
         };
 
-        const openHistoryModal = (e) => {
-            e.preventDefault();
-            renderHistoryModalList();
-            historyModal.classList.remove('hidden');
-            setTimeout(()=> historyModal.classList.remove('opacity-0'), 10);
-            menuDropdown.classList.add('hidden');
+        // --- モーダル共通 ---
+        const openModal = (modal) => {
+            modal.classList.remove('hidden');
+            setTimeout(()=> modal.classList.remove('opacity-0'), 10);
         };
-        const closeHistoryModal = () => {
-            historyModal.classList.add('opacity-0');
-            setTimeout(()=> historyModal.classList.add('hidden'), 300);
+        const closeModal = (modal) => {
+            modal.classList.add('opacity-0');
+            setTimeout(()=> modal.classList.add('hidden'), 300);
         };
+        
+        // --- 履歴編集モーダル ---
+        const openHistoryModal = (e) => { e.preventDefault(); renderHistoryModalList(); openModal(historyModal); menuDropdown.classList.add('hidden'); };
+        const closeHistoryModal = () => closeModal(historyModal);
         const renderHistoryModalList = () => {
             historyModalList.innerHTML = '';
             if (historySet.size === 0) {
@@ -360,80 +451,155 @@
             Array.from(historySet).sort().forEach(name => {
                 const item = document.createElement('div');
                 item.className = 'flex justify-between items-center p-2 rounded-md hover:bg-slate-100';
-                const nameSpan = document.createElement('span');
-                nameSpan.textContent = name;
-                const deleteBtn = document.createElement('button');
-                deleteBtn.innerHTML = '&times;';
-                deleteBtn.className = 'text-red-500 hover:text-red-700 font-bold text-xl leading-none px-2';
-                deleteBtn.title = `「${name}」を削除`;
-                deleteBtn.onclick = () => handleDeleteHistoryItem(name);
-                item.append(nameSpan, deleteBtn);
+                item.innerHTML = `<span>${name}</span><button title="「${name}」を削除" class="text-red-500 hover:text-red-700 font-bold text-xl leading-none px-2">&times;</button>`;
+                item.querySelector('button').onclick = () => handleDeleteHistoryItem(name);
                 historyModalList.appendChild(item);
             });
         };
-        const handleDeleteHistoryItem = (name) => {
-            historySet.delete(name);
-            updateHistoryStorage();
-            renderHistoryModalList();
+        const handleDeleteHistoryItem = (name) => { historySet.delete(name); updateHistoryStorage(); renderHistoryModalList(); };
+        const handleDeleteAllHistory = () => { if (confirm('すべての登場人物の履歴を削除しますか？')) { historySet.clear(); updateHistoryStorage(); renderHistoryModalList(); }};
+
+        // --- ★新規: 保存/読み込みモーダル ---
+        const openSaveLoadModal = (e) => { e.preventDefault(); renderSavedSlotsList(); openModal(saveLoadModal); menuDropdown.classList.add('hidden'); };
+        const closeSaveLoadModal = () => closeModal(saveLoadModal);
+        const renderSavedSlotsList = () => {
+            savedSlotsList.innerHTML = '';
+            const slots = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith('promptBuilderSaveData_')) {
+                    const slotNum = key.split('_')[1];
+                    try {
+                        const data = JSON.parse(localStorage.getItem(key));
+                        if (data.saveData && data.timestamp) {
+                            slots.push({ slot: slotNum, ...data });
+                        }
+                    } catch (e) { console.error(`Slot ${slotNum} data is corrupted.`); }
+                }
+            }
+            if (slots.length === 0) {
+                savedSlotsList.innerHTML = '<p class="text-slate-500 text-center text-sm py-4">保存されたデータはありません。</p>';
+                return;
+            }
+            slots.sort((a,b) => a.slot - b.slot).forEach(({ slot, timestamp, saveData }) => {
+                const item = document.createElement('div');
+                item.className = 'flex justify-between items-center p-2 rounded-md hover:bg-slate-100 text-sm';
+                const date = new Date(timestamp).toLocaleString('ja-JP');
+                item.innerHTML = `
+                    <div>
+                        <span class="font-bold text-slate-700">スロット ${slot}</span>
+                        <span class="text-slate-500 ml-2 text-xs">${date}</span>
+                        <p class="text-slate-600 truncate text-xs mt-1 pr-2">${saveData[0] ? (saveData[0].character || '') + saveData[0].template.text : '空'}</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button data-slot="${slot}" class="load-slot-btn bg-green-500 hover:bg-green-600 text-white font-semibold py-1 px-3 rounded-md">読込</button>
+                        <button data-slot="${slot}" class="delete-slot-btn text-red-500 hover:text-red-700 font-bold text-lg leading-none px-1">&times;</button>
+                    </div>
+                `;
+                savedSlotsList.appendChild(item);
+            });
+            savedSlotsList.querySelectorAll('.load-slot-btn').forEach(btn => btn.onclick = handleLoadFromSlot);
+            savedSlotsList.querySelectorAll('.delete-slot-btn').forEach(btn => btn.onclick = handleDeleteSlot);
         };
-        const handleDeleteAllHistory = () => {
-            if (confirm('すべての登場人物の履歴を削除しますか？')) {
-                historySet.clear();
-                updateHistoryStorage();
-                renderHistoryModalList();
+        const handleSaveToSlot = () => {
+            const slot = parseInt(slotInput.value, 10);
+            if (!slot || slot < 1 || slot > 999) {
+                alert('1から999の間のスロット番号を入力してください。');
+                return;
+            }
+            const balloons = promptContainer.querySelectorAll('.prompt-balloon');
+            if (balloons.length === 0) {
+                alert('保存するプロンプトがありません。');
+                return;
+            }
+            if (localStorage.getItem(`promptBuilderSaveData_${slot}`) && !confirm(`スロット ${slot} には既にデータがあります。上書きしますか？`)) {
+                return;
+            }
+            
+            const saveData = Array.from(balloons).map(b => ({
+                template: { text: b.dataset.templateText, label: b.dataset.templateLabel },
+                character: b.dataset.characterName || null
+            }));
+            const dataToStore = {
+                timestamp: new Date().toISOString(),
+                saveData: saveData
+            };
+
+            localStorage.setItem(`promptBuilderSaveData_${slot}`, JSON.stringify(dataToStore));
+            alert(`スロット ${slot} に保存しました。`);
+            renderSavedSlotsList();
+        };
+        const handleLoadFromSlot = (e) => {
+            const slot = e.target.dataset.slot;
+            const item = localStorage.getItem(`promptBuilderSaveData_${slot}`);
+            if (!item) {
+                alert('データの読み込みに失敗しました。');
+                return;
+            }
+            if (promptContainer.children.length > 0 && !confirm('現在のプロンプトはクリアされます。よろしいですか？')) {
+                return;
+            }
+            
+            const loadedData = JSON.parse(item).saveData;
+            promptContainer.innerHTML = ''; 
+            loadedData.forEach(item => addBalloon(item.template, item.character));
+            alert(`スロット ${slot} から読み込みました。`);
+            closeSaveLoadModal();
+        };
+        const handleDeleteSlot = (e) => {
+            const slot = e.target.dataset.slot;
+            if (confirm(`スロット ${slot} のデータを削除しますか？`)) {
+                localStorage.removeItem(`promptBuilderSaveData_${slot}`);
+                renderSavedSlotsList();
             }
         };
 
+        // --- グローバルイベントと出力処理 ---
         const handleGlobalClick = (e) => {
             if (!menuContainer.contains(e.target)) menuDropdown.classList.add('hidden');
-            if (!characterInputContainer.contains(e.target)) historyDropdown.classList.add('hidden');
+            if (historyDropdown && !placeholderInput.contains(e.target)) historyDropdown.classList.add('hidden');
             if (!e.target.closest('.prompt-balloon')) closeAllCharacterDropdowns();
         };
         const generateFullText = () => {
-            return Array.from(promptContainer.querySelectorAll('.prompt-balloon')).map(balloon => {
+            return Array.from(promptContainer.querySelectorAll('.prompt-balloon')).map((balloon, index) => {
                 const textContainer = balloon.querySelector('.balloon-text-container');
                 const numberSpan = textContainer.querySelector('.number-span');
-                const number = numberSpan ? numberSpan.textContent : '';
+                const categoryNumber = numberSpan ? numberSpan.textContent : '';
                 let baseText = "";
                 if (balloon.dataset.characterName) {
                     baseText = balloon.dataset.characterName + balloon.dataset.templateAfter;
                 } else {
                     baseText = balloon.dataset.templateBefore;
                 }
-                return `${baseText}${number}: `;
+                return `${index + 1}. ${baseText} ${categoryNumber}: `;
             }).join('\n');
         };
         const handleCopy = (e) => {
             e.preventDefault();
             const text = generateFullText();
             if (!text) return;
-            clipboardHelper.value = text;
-            clipboardHelper.select();
-            clipboardHelper.setSelectionRange(0, 99999);
-            try {
-                document.execCommand('copy');
-                copyTooltip.classList.add('visible');
-                setTimeout(() => copyTooltip.classList.remove('visible'), 2000);
-            } catch (err) {
-                console.error('コピーに失敗しました', err);
-            }
+            navigator.clipboard.writeText(text).then(() => {
+                showTooltip('コピーしました！');
+            }).catch(err => {
+                console.error('コピーに失敗:', err);
+                alert('コピーに失敗しました。');
+            });
             menuDropdown.classList.add('hidden');
         };
         const handleExport = (e) => {
             e.preventDefault();
             const text = generateFullText();
             if (!text) return;
-            const blob = new Blob([text], { type: 'text/plain' });
+            const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
-            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-            link.download = `prompt_${timestamp}.txt`;
+            link.download = `prompt_${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.txt`;
             link.click();
             URL.revokeObjectURL(link.href);
             menuDropdown.classList.add('hidden');
         };
 
-        // アプリケーションの初期化
+        // --- アプリケーション起動 ---
         initializeApp();
     });
     </script>
